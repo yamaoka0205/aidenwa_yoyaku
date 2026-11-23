@@ -108,3 +108,22 @@ curl -sS -X POST "$CHECK" \
 ```
 
 実AWSでは API Gateway HTTP API（`yme1o14ql5`）と Function URL の両方で 空席確認・予約確定を確認済み。ベースURLは `build/api_endpoints.json` を参照。
+
+管理画面用（Phase 3）:
+
+- `POST .../auth/login` … Cognito ログイン
+- `POST .../auth/logout` … Cognito ログアウト
+- `POST .../auth/me` … セッション確認
+- `POST .../reservations/list` … 日付の予約一覧（要ログイン）
+- `POST .../store/get` … 店舗設定取得（要ログイン）
+- `POST .../store/update` … 店舗設定更新（要ログイン）
+
+認証セットアップ:
+
+```bash
+python3 scripts/setup_cognito_admin.py
+python3 scripts/seed_demo_admin.py
+python3 scripts/deploy_api.py
+```
+
+フロントは `admin/`（`npm run dev`）。

@@ -1,0 +1,4 @@
+name = "yoyaku-daicho"
+compatibility_date = "2024-11-01"
+main = "workers/spa.js"
+assets = { directory = "./dist", binding = "ASSETS", not_found_handling = "single-page-application" }

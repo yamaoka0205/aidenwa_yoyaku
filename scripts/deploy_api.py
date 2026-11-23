@@ -6,16 +6,22 @@ API Gateway is optional — if denied, public Function URLs are used instead.
 
 Usage:
   python3 scripts/deploy_api.py
+  python3 scripts/deploy_api.py --only BookingAppListReservations,BookingAppGetStore
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+# Progress lines appear immediately even when stdout is piped.
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
 
 import boto3
 from botocore.exceptions import ClientError
@@ -34,6 +40,51 @@ FUNCTIONS = {
         "handler": "handlers.confirm_reservation.handler",
         "route": "POST /reservations/confirm",
         "key": "confirmReservation",
+    },
+    "BookingAppListReservations": {
+        "handler": "handlers.list_reservations.handler",
+        "route": "POST /reservations/list",
+        "key": "listReservations",
+    },
+    "BookingAppGetStore": {
+        "handler": "handlers.get_store.handler",
+        "route": "POST /store/get",
+        "key": "getStore",
+    },
+    "BookingAppUpdateStore": {
+        "handler": "handlers.update_store.handler",
+        "route": "POST /store/update",
+        "key": "updateStore",
+    },
+    "BookingAppLogin": {
+        "handler": "handlers.login.handler",
+        "route": "POST /auth/login",
+        "key": "login",
+    },
+    "BookingAppLogout": {
+        "handler": "handlers.logout.handler",
+        "route": "POST /auth/logout",
+        "key": "logout",
+    },
+    "BookingAppAuthMe": {
+        "handler": "handlers.auth_me.handler",
+        "route": "POST /auth/me",
+        "key": "authMe",
+    },
+    "BookingAppCreateApplication": {
+        "handler": "handlers.create_application.handler",
+        "route": "POST /applications/create",
+        "key": "createApplication",
+    },
+    "BookingAppListApplications": {
+        "handler": "handlers.list_applications.handler",
+        "route": "POST /applications/list",
+        "key": "listApplications",
+    },
+    "BookingAppReviewApplication": {
+        "handler": "handlers.review_application.handler",
+        "route": "POST /applications/review",
+        "key": "reviewApplication",
     },
 }
 # Called only from the Connect flow; no public URL or API route.
@@ -79,6 +130,7 @@ def ensure_role(iam, account: str, reg: str) -> str:
     role_arn = f"arn:aws:iam::{account}:role/{ROLE_NAME}"
     trust = (ROOT / "infra" / "lambda_trust_policy.json").read_text()
     policy_doc = (ROOT / "infra" / "lambda_dynamodb_policy.json").read_text()
+    created = False
     try:
         iam.create_role(
             RoleName=ROLE_NAME,
@@ -86,6 +138,7 @@ def ensure_role(iam, account: str, reg: str) -> str:
             Description="Execution role for BookingApp Lambda functions",
         )
         print(f"Created role {ROLE_NAME}")
+        created = True
     except ClientError as exc:
         if exc.response["Error"]["Code"] != "EntityAlreadyExists":
             raise
@@ -97,28 +150,56 @@ def ensure_role(iam, account: str, reg: str) -> str:
         PolicyDocument=policy_doc,
     )
 
-    # IAM role propagation can lag briefly.
-    time.sleep(8)
+    # New roles need a short propagation wait; existing ones do not.
+    if created:
+        print("Waiting 8s for new IAM role propagation…")
+        time.sleep(8)
     return role_arn
 
 
-def ensure_function(lam, name: str, handler: str, role_arn: str, zip_path: Path, reg: str):
-    env = {
-        "Variables": {
-            "BOOKING_TABLE_NAME": "BookingApp",
-            "BEDROCK_MODEL_ID": os.environ.get(
-                "BEDROCK_MODEL_ID", "amazon.nova-lite-v1:0"
-            ),
+def _wait_updated(lam, name: str) -> None:
+    print(f"  waiting for {name}…", flush=True)
+    waiter = lam.get_waiter("function_updated_v2")
+    waiter.wait(
+        FunctionName=name,
+        WaiterConfig={"Delay": 2, "MaxAttempts": 60},
+    )
+
+
+def cognito_env() -> dict[str, str]:
+    path = ROOT / "build" / "cognito.json"
+    if not path.exists():
+        return {
+            "COGNITO_USER_POOL_ID": os.environ.get("COGNITO_USER_POOL_ID", ""),
+            "COGNITO_CLIENT_ID": os.environ.get("COGNITO_CLIENT_ID", ""),
         }
+    data = json.loads(path.read_text())
+    return {
+        "COGNITO_USER_POOL_ID": data.get("userPoolId")
+        or os.environ.get("COGNITO_USER_POOL_ID", ""),
+        "COGNITO_CLIENT_ID": data.get("clientId")
+        or os.environ.get("COGNITO_CLIENT_ID", ""),
     }
+
+
+def ensure_function(lam, name: str, handler: str, role_arn: str, zip_path: Path, reg: str):
+    env_vars = {
+        "BOOKING_TABLE_NAME": "BookingApp",
+        "BEDROCK_MODEL_ID": os.environ.get(
+            "BEDROCK_MODEL_ID", "amazon.nova-lite-v1:0"
+        ),
+        **cognito_env(),
+    }
+    env = {"Variables": {k: v for k, v in env_vars.items() if v}}
     zip_bytes = zip_path.read_bytes()
     try:
-        lam.get_function(FunctionName=name)
+        current = lam.get_function(FunctionName=name)["Configuration"]
         exists = True
     except ClientError as exc:
         if exc.response["Error"]["Code"] != "ResourceNotFoundException":
             raise
         exists = False
+        current = {}
 
     if not exists:
         print(f"Creating function {name}")
@@ -134,22 +215,37 @@ def ensure_function(lam, name: str, handler: str, role_arn: str, zip_path: Path,
             Description="BookingApp API",
         )
         waiter = lam.get_waiter("function_active_v2")
-        waiter.wait(FunctionName=name)
+        waiter.wait(
+            FunctionName=name,
+            WaiterConfig={"Delay": 2, "MaxAttempts": 60},
+        )
     else:
         print(f"Updating function code {name}")
         lam.update_function_code(FunctionName=name, ZipFile=zip_bytes)
-        waiter = lam.get_waiter("function_updated_v2")
-        waiter.wait(FunctionName=name)
-        lam.update_function_configuration(
-            FunctionName=name,
-            Handler=handler,
-            Runtime="python3.12",
-            Timeout=15,
-            MemorySize=256,
-            Environment=env,
-            Role=role_arn,
+        _wait_updated(lam, name)
+
+        needs_config = (
+            current.get("Handler") != handler
+            or current.get("Runtime") != "python3.12"
+            or current.get("Timeout") != 15
+            or current.get("MemorySize") != 256
+            or current.get("Role") != role_arn
+            or (current.get("Environment") or {}).get("Variables") != env["Variables"]
         )
-        waiter.wait(FunctionName=name)
+        if needs_config:
+            print(f"Updating function config {name}")
+            lam.update_function_configuration(
+                FunctionName=name,
+                Handler=handler,
+                Runtime="python3.12",
+                Timeout=15,
+                MemorySize=256,
+                Environment=env,
+                Role=role_arn,
+            )
+            _wait_updated(lam, name)
+        else:
+            print(f"  config unchanged for {name}")
 
     return lam.get_function(FunctionName=name)["Configuration"]["FunctionArn"]
 
@@ -179,7 +275,7 @@ def ensure_function_urls(lam) -> dict[str, str]:
                 Cors={
                     "AllowOrigins": ["*"],
                     "AllowMethods": ["POST"],
-                    "AllowHeaders": ["content-type"],
+                    "AllowHeaders": ["content-type", "authorization"],
                 },
             )
             print(f"Created Function URL for {fn_name}")
@@ -187,6 +283,17 @@ def ensure_function_urls(lam) -> dict[str, str]:
             if exc.response["Error"]["Code"] != "ResourceConflictException":
                 raise
             cfg = lam.get_function_url_config(FunctionName=fn_name)
+            try:
+                lam.update_function_url_config(
+                    FunctionName=fn_name,
+                    Cors={
+                        "AllowOrigins": ["*"],
+                        "AllowMethods": ["POST"],
+                        "AllowHeaders": ["content-type", "authorization"],
+                    },
+                )
+            except ClientError:
+                pass
             print(f"Function URL exists for {fn_name}")
 
         _add_permission(
@@ -221,13 +328,24 @@ def ensure_http_api(apigw, lam, account: str, reg: str) -> str:
             Name=API_NAME,
             ProtocolType="HTTP",
             CorsConfiguration={
-                "AllowHeaders": ["content-type"],
+                "AllowHeaders": ["content-type", "authorization"],
                 "AllowMethods": ["POST", "OPTIONS"],
                 "AllowOrigins": ["*"],
             },
         )["ApiId"]
     else:
         print(f"HTTP API exists {api_id}")
+        try:
+            apigw.update_api(
+                ApiId=api_id,
+                CorsConfiguration={
+                    "AllowHeaders": ["content-type", "authorization"],
+                    "AllowMethods": ["POST", "OPTIONS"],
+                    "AllowOrigins": ["*"],
+                },
+            )
+        except ClientError as exc:
+            print(f"CORS update skipped: {exc.response['Error'].get('Code')}")
 
     try:
         apigw.create_stage(ApiId=api_id, StageName="prod", AutoDeploy=True)
@@ -311,6 +429,15 @@ def write_endpoints(payload: dict) -> Path:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Deploy BookingApp Lambda APIs")
+    parser.add_argument(
+        "--only",
+        help="Comma-separated function names to update (default: all)",
+        default="",
+    )
+    args = parser.parse_args()
+    only = {n.strip() for n in args.only.split(",") if n.strip()}
+
     reg = region()
     session = boto3.Session(region_name=reg)
     sts = session.client("sts")
@@ -318,44 +445,92 @@ def main() -> int:
     lam = session.client("lambda")
     apigw = session.client("apigatewayv2")
     account = account_id(sts)
-    print(f"Account={account} Region={reg}")
+    print(f"Account={account} Region={reg}", flush=True)
 
     zip_path = package_zip()
     role_arn = ensure_role(iam, account, reg)
 
-    for fn_name, meta in {**FUNCTIONS, **CONNECT_FUNCTIONS}.items():
+    all_fns = {**FUNCTIONS, **CONNECT_FUNCTIONS}
+    selected = (
+        {k: v for k, v in all_fns.items() if k in only} if only else all_fns
+    )
+    if only and not selected:
+        print(f"ERROR: no matching functions for --only {args.only}", file=sys.stderr)
+        return 1
+
+    print(f"Deploying {len(selected)} function(s)…", flush=True)
+    for fn_name, meta in selected.items():
         ensure_function(lam, fn_name, meta["handler"], role_arn, zip_path, reg)
 
-    function_urls = ensure_function_urls(lam)
+    # Function URLs / HTTP API only for public API functions that were selected
+    # (or all, when deploying everything).
+    public = {k: v for k, v in FUNCTIONS.items() if k in selected}
+    function_urls: dict[str, str] = {}
+    if public:
+        # ensure_function_urls iterates FUNCTIONS; temporarily filter via copy path
+        original = dict(FUNCTIONS)
+        FUNCTIONS.clear()
+        FUNCTIONS.update(public)
+        try:
+            function_urls = ensure_function_urls(lam)
+        finally:
+            FUNCTIONS.clear()
+            FUNCTIONS.update(original)
 
     api_base = None
-    try:
-        api_base = ensure_http_api(apigw, lam, account, reg)
-    except ClientError as exc:
-        code = exc.response["Error"]["Code"]
-        if code in {"AccessDenied", "AccessDeniedException", "UnauthorizedOperation"}:
-            print(
-                "API Gateway 権限なし → Lambda Function URL で公開します。",
-                file=sys.stderr,
-            )
-        else:
-            raise
+    if public:
+        try:
+            original = dict(FUNCTIONS)
+            FUNCTIONS.clear()
+            FUNCTIONS.update(public)
+            try:
+                api_base = ensure_http_api(apigw, lam, account, reg)
+            finally:
+                FUNCTIONS.clear()
+                FUNCTIONS.update(original)
+        except ClientError as exc:
+            code = exc.response["Error"]["Code"]
+            if code in {"AccessDenied", "AccessDeniedException", "UnauthorizedOperation"}:
+                print(
+                    "API Gateway 権限なし → Lambda Function URL で公開します。",
+                    file=sys.stderr,
+                )
+            else:
+                raise
 
-    print("OK")
+    print("OK", flush=True)
     if api_base:
         print(f"API Gateway Base URL: {api_base}")
+        print(f"  POST {api_base}/auth/login")
+        print(f"  POST {api_base}/auth/logout")
+        print(f"  POST {api_base}/auth/me")
+        print(f"  POST {api_base}/applications/create")
+        print(f"  POST {api_base}/applications/list")
+        print(f"  POST {api_base}/applications/review")
         print(f"  POST {api_base}/availability/check")
         print(f"  POST {api_base}/reservations/confirm")
+        print(f"  POST {api_base}/reservations/list")
+        print(f"  POST {api_base}/store/get")
+        print(f"  POST {api_base}/store/update")
         write_endpoints(
             {
                 "mode": "api_gateway",
                 "baseUrl": api_base,
+                "login": f"{api_base}/auth/login",
+                "logout": f"{api_base}/auth/logout",
+                "authMe": f"{api_base}/auth/me",
+                "createApplication": f"{api_base}/applications/create",
+                "listApplications": f"{api_base}/applications/list",
+                "reviewApplication": f"{api_base}/applications/review",
                 "checkAvailability": f"{api_base}/availability/check",
                 "confirmReservation": f"{api_base}/reservations/confirm",
+                "listReservations": f"{api_base}/reservations/list",
+                "getStore": f"{api_base}/store/get",
+                "updateStore": f"{api_base}/store/update",
                 "functionUrls": function_urls,
             }
         )
-    else:
+    elif function_urls:
         print("Function URLs:")
         for key, url in function_urls.items():
             print(f"  {key}: {url}")

@@ -77,6 +77,41 @@ class BookingStore:
             kwargs["ExclusiveStartKey"] = last
         return items
 
+    def list_hours(self, tenant_id: str) -> list[dict]:
+        items: list[dict] = []
+        kwargs = {
+            "KeyConditionExpression": Key("PK").eq(f"TENANT#{tenant_id}")
+            & Key("SK").begins_with("HOURS#")
+        }
+        while True:
+            resp = self.table.query(**kwargs)
+            items.extend(resp.get("Items", []))
+            last = resp.get("LastEvaluatedKey")
+            if not last:
+                break
+            kwargs["ExclusiveStartKey"] = last
+        return items
+
+    def list_reservations_for_date(self, tenant_id: str, date_s: str) -> list[dict]:
+        """A4: reservations for one day, SK begins_with RES#DATE#yyyy-mm-dd."""
+        prefix = f"RES#DATE#{date_s}"
+        items: list[dict] = []
+        kwargs = {
+            "KeyConditionExpression": Key("PK").eq(f"TENANT#{tenant_id}")
+            & Key("SK").begins_with(prefix)
+        }
+        while True:
+            resp = self.table.query(**kwargs)
+            items.extend(resp.get("Items", []))
+            last = resp.get("LastEvaluatedKey")
+            if not last:
+                break
+            kwargs["ExclusiveStartKey"] = last
+        return items
+
+    def put_item(self, item: dict) -> None:
+        self.table.put_item(Item=item)
+
     def get_slot(
         self, tenant_id: str, table_id: str, date_s: str, time_key: str
     ) -> dict | None:
