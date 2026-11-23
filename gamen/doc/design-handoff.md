@@ -5,6 +5,7 @@
 - 関連: `restaurant-ledger-ux-review.md`（競合調査と推奨仕様 R1〜R3）、`document/作りたいもの.md`、`document/市場調査.md`
 - 実装の現状: `admin/`（React）。**実装は一覧型台帳**。理想UIは同フォルダの UX レビュー **R1 タイムライン台帳**
 - 更新: 2026-11-23（Asia/Tokyo）
+- **Claudeデザイン成果物**: [`../design/`](../design/)（`よやく台帳_UIデザイン.html` と `screens-unpacked/`）
 
 ---
 

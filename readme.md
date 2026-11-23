@@ -14,4 +14,4 @@
 cd admin && npm install && npm run dev
 ```
 
-詳細は `document/道.md` と `admin/README.md`。画面UXの競合調査は `gamen/doc/restaurant-ledger-ux-review.md`。デザイン依頼用（画面遷移・画面一覧）は `gamen/doc/design-handoff.md`。
+詳細は `document/道.md` と `admin/README.md`。画面UXの競合調査は `gamen/doc/restaurant-ledger-ux-review.md`。デザイン依頼用は `gamen/doc/design-handoff.md`。Claudeデザイン成果物は `gamen/design/`。
