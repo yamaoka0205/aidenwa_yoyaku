@@ -16,9 +16,11 @@
 1. 日本語音声（Mizuki）
 2. `BookingAppResolveStore` で店舗特定（普通の電話／非通知／WebRTC）
 3. 「〇〇店です。ご予約は1、それ以外は2」
-4. **1** → Lex `BookReservation`（日時・人数・名前を聞き取り → 空席確認 → 復唱 → 確定）
-5. **2** → Lex `AskFaq`（FAQ / Bedrock で回答）
+4. **1** → Lex（ASR/TTS）+ Lambda `BookingAppPhoneTurn`（人数→日時→名前→空席→復唱→確定）。判定はサンプル発話ではなく Lambda / Bedrock
+5. **2** → Lex + Lambda FAQ（Bedrock）
 6. 入力なし・1/2以外は1回だけやり直し
+
+Lex の短い返答（「4」など）は NLU 上 FallbackIntent になりやすい。`FallbackIntent` にも同じ Lambda を繋ぎ、`intentHint` で予約/FAQに戻す。
 
 ## 通信ウィジェットへの紐づけ（コンソール・要作業）
 

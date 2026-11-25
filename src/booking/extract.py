@@ -112,16 +112,53 @@ def _parse_time(text: str) -> str | None:
     return None
 
 
+_SPOKEN_PARTY = {
+    "ひとり": 1,
+    "一人": 1,
+    "いち": 1,
+    "ひとつ": 1,
+    "ふたり": 2,
+    "二人": 2,
+    "に": 2,
+    "ににん": 2,
+    "さんにん": 3,
+    "三人": 3,
+    "さん": 3,
+    "よにん": 4,
+    "四人": 4,
+    "よん": 4,
+    "し": 4,
+    "ごにん": 5,
+    "五人": 5,
+    "ご": 5,
+    "ろくにん": 6,
+    "六人": 6,
+    "ろく": 6,
+    "ななにん": 7,
+    "七人": 7,
+    "なな": 7,
+}
+
+
 def _parse_party(text: str) -> int | None:
-    m = re.search(r"(\d{1,2})\s*名", text)
+    t = (text or "").strip()
+    # Lex ASR often returns bare "4" / "４" for party size turns.
+    m = re.fullmatch(r"[0-9０-９]{1,2}", t)
+    if m:
+        n = int(t.translate(str.maketrans("０１２３４５６７８９", "0123456789")))
+        return n
+    m = re.search(r"(\d{1,2})\s*名", t)
     if m:
         return int(m.group(1))
-    m = re.search(r"(\d{1,2})\s*人", text)
+    m = re.search(r"(\d{1,2})\s*人", t)
     if m:
         return int(m.group(1))
-    m = re.search(r"([一二三四五六七八九十])\s*人", text)
+    m = re.search(r"([一二三四五六七八九十])\s*人", t)
     if m:
         return KANJI_NUM.get(m.group(1))
+    compact = re.sub(r"[\s　]", "", t)
+    if compact in _SPOKEN_PARTY:
+        return _SPOKEN_PARTY[compact]
     return None
 
 

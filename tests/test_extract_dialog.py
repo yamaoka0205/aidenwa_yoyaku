@@ -18,6 +18,12 @@ def test_extract_tomorrow_evening_party():
     assert slots.date is not None
 
 
+def test_extract_bare_party_digit_from_asr():
+    assert extract_with_rules("4").party_size == 4
+    assert extract_with_rules("４").party_size == 4
+    assert extract_with_rules("よにん").party_size == 4
+
+
 def test_extract_weekday():
     slots = extract_with_rules("来週の金曜日の18時に2名")
     assert slots.time == "18:00"

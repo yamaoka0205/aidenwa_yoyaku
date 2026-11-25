@@ -14,6 +14,11 @@ from handlers import faq_turn, reservation_turn
 
 
 def handler(event: dict[str, Any] | None = None, context: Any = None) -> dict[str, Any]:
+    """Lex code-hook router.
+
+    Lex is ASR/TTS only. Short answers often land on AMAZON.FallbackIntent;
+    Connect's intentHint chooses BookReservation vs AskFaq — not sample utterances.
+    """
     event = event or {}
     session = (event.get("sessionState") or {}).get("sessionAttributes") or {}
     intent = ((event.get("sessionState") or {}).get("intent") or {}).get("name") or ""
@@ -23,6 +28,7 @@ def handler(event: dict[str, Any] | None = None, context: Any = None) -> dict[st
     elif intent == "AskFaq":
         pass
     else:
+        # BookReservation, FallbackIntent, empty → reservation dialog
         intent = "BookReservation"
     if intent == "AskFaq":
         return faq_turn.handler(event, context)
