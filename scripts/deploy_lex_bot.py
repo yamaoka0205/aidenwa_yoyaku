@@ -160,7 +160,11 @@ def main() -> int:
         print(f"Created locale {LOCALE}")
         time.sleep(5)
     except ClientError as exc:
-        if exc.response["Error"]["Code"] != "ConflictException":
+        # ConflictException or PreconditionFailedException when locale already exists
+        if exc.response["Error"]["Code"] not in {
+            "ConflictException",
+            "PreconditionFailedException",
+        }:
             raise
         print(f"Locale exists {LOCALE}")
 
@@ -170,25 +174,36 @@ def main() -> int:
     )
     by_name = {i["intentName"]: i["intentId"] for i in intents}
 
-    def upsert_intent(name: str, samples: list[str], dialog: bool):
+    fulfillment = {
+        "enabled": True,
+        "active": True,
+        "postFulfillmentStatusSpecification": {
+            "successNextStep": {"dialogAction": {"type": "EndConversation"}},
+            "failureNextStep": {"dialogAction": {"type": "EndConversation"}},
+            "timeoutNextStep": {"dialogAction": {"type": "EndConversation"}},
+        },
+    }
+
+    def upsert_intent(
+        name: str,
+        samples: list[str],
+        dialog: bool,
+        slot_priorities: list[dict] | None = None,
+    ):
+        # Lex locale build requires ≥1 utterance + slot priorities. Field
+        # collection still goes through FallbackIntent → Lambda (ASR/TTS only).
         payload = {
             "botId": bot_id,
             "botVersion": "DRAFT",
             "localeId": LOCALE,
             "intentName": name,
             "sampleUtterances": [{"utterance": u} for u in samples],
-            "fulfillmentCodeHook": {
-                "enabled": True,
-                "active": True,
-                "postFulfillmentStatusSpecification": {
-                    "successNextStep": {"dialogAction": {"type": "EndConversation"}},
-                    "failureNextStep": {"dialogAction": {"type": "EndConversation"}},
-                    "timeoutNextStep": {"dialogAction": {"type": "EndConversation"}},
-                },
-            },
+            "fulfillmentCodeHook": fulfillment,
         }
         if dialog:
             payload["dialogCodeHook"] = {"enabled": True}
+        if slot_priorities:
+            payload["slotPriorities"] = slot_priorities
         if name in by_name:
             lex.update_intent(intentId=by_name[name], **payload)
             print(f"Updated intent {name}")
@@ -197,16 +212,104 @@ def main() -> int:
         print(f"Created intent {name} {resp['intentId']}")
         return resp["intentId"]
 
+    # Placeholder utterances only so locale build succeeds (not for dialog NLU).
+    book_id = upsert_intent("BookReservation", ["予約"], dialog=True)
+    faq_id = upsert_intent("AskFaq", ["質問"], dialog=True)
+
+    def ensure_freeform_slot(intent_id: str, slot_name: str) -> str:
+        """AMAZON.FreeFormInput keeps the next turn on DialogCodeHook (no NLU)."""
+        existing = {
+            s["slotName"]: s["slotId"]
+            for s in lex.list_slots(
+                botId=bot_id, botVersion="DRAFT", localeId=LOCALE, intentId=intent_id
+            ).get("slotSummaries", [])
+        }
+        body = {
+            "slotTypeId": "AMAZON.FreeFormInput",
+            "valueElicitationSetting": {
+                "slotConstraint": "Optional",
+                "promptSpecification": {
+                    "messageGroups": [
+                        {
+                            "message": {
+                                "plainTextMessage": {"value": "続けてお話しください。"}
+                            }
+                        }
+                    ],
+                    "maxRetries": 2,
+                    "allowInterrupt": True,
+                },
+            },
+        }
+        if slot_name in existing:
+            lex.update_slot(
+                slotId=existing[slot_name],
+                slotName=slot_name,
+                botId=bot_id,
+                botVersion="DRAFT",
+                localeId=LOCALE,
+                intentId=intent_id,
+                **body,
+            )
+            print(f"Updated slot {slot_name}")
+            return existing[slot_name]
+        resp = lex.create_slot(
+            slotName=slot_name,
+            botId=bot_id,
+            botVersion="DRAFT",
+            localeId=LOCALE,
+            intentId=intent_id,
+            **body,
+        )
+        print(f"Created slot {slot_name}")
+        return resp["slotId"]
+
+    book_user = ensure_freeform_slot(book_id, "UserReply")
+    book_confirm = ensure_freeform_slot(book_id, "Confirmation")
+    faq_user = ensure_freeform_slot(faq_id, "UserReply")
+
+    # Re-save intents with slot priorities (required after creating slots).
     upsert_intent(
         "BookReservation",
-        ["予約したい", "席を取りたい", "予約をお願いします", "テーブル予約"],
+        ["予約"],
         dialog=True,
+        slot_priorities=[
+            {"priority": 1, "slotId": book_user},
+            {"priority": 2, "slotId": book_confirm},
+        ],
     )
     upsert_intent(
         "AskFaq",
-        ["営業時間を教えて", "駐車場はありますか", "禁煙ですか", "聞きたいことがあります"],
+        ["質問"],
         dialog=True,
+        slot_priorities=[{"priority": 1, "slotId": faq_user}],
     )
+
+    # Short ASR results ("4", "明日") hit FallbackIntent. Hook it to the same Lambda
+    # so Connect does not treat Fallback as end-of-call.
+    fb_id = by_name.get("FallbackIntent")
+    if not fb_id:
+        intents = lex.list_intents(
+            botId=bot_id, botVersion="DRAFT", localeId=LOCALE
+        ).get("intentSummaries", [])
+        fb_id = next(
+            (i["intentId"] for i in intents if i["intentName"] == "FallbackIntent"),
+            None,
+        )
+    if fb_id:
+        lex.update_intent(
+            intentId=fb_id,
+            botId=bot_id,
+            botVersion="DRAFT",
+            localeId=LOCALE,
+            intentName="FallbackIntent",
+            parentIntentSignature="AMAZON.FallbackIntent",
+            dialogCodeHook={"enabled": True},
+            fulfillmentCodeHook=fulfillment,
+        )
+        print("Updated FallbackIntent code hooks")
+    else:
+        print("WARN: FallbackIntent not found — short answers may disconnect")
 
     # Attach Lambda code hooks via bot alias / bot locale resource — Lex V2 uses
     # bot aliases' botAliasLocaleSettings with codeHookSpecification, AND
