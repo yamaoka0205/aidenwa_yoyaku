@@ -45,7 +45,7 @@ def _menu_prompt(store_name: str) -> str:
     with MessageParticipant before GetParticipantInput.
     """
     name = (store_name or "").strip() or "当店"
-    return f"お電話ありがとうございます。{name}です。"
+    return f"お電話ありがとうございます。{name}です。ご予約を承ります。"
 
 
 def handler(event: dict[str, Any] | None = None, context: Any = None) -> dict[str, str]:

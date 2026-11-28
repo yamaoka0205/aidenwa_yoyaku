@@ -23,8 +23,6 @@ ids = {
     "set_attrs": "11111111-1111-4111-8111-111111111103",
     "check_found": "11111111-1111-4111-8111-111111111104",
     "menu_greet": "11111111-1111-4111-8111-111111111113",
-    "menu": "11111111-1111-4111-8111-111111111105",
-    "menu_retry": "11111111-1111-4111-8111-111111111106",
     "lex_reserve": "11111111-1111-4111-8111-111111111107",
     "lex_faq": "11111111-1111-4111-8111-111111111108",
     "unknown": "11111111-1111-4111-8111-111111111109",
@@ -32,10 +30,6 @@ ids = {
     "bye": "11111111-1111-4111-8111-111111111111",
     "after_lex": "11111111-1111-4111-8111-111111111112",
 }
-
-MENU_DTMF_TEXT = (
-    "ご予約の方は1を、それ以外のお問い合わせは2を押してください。"
-)
 
 
 def content() -> dict:
@@ -127,102 +121,19 @@ def content() -> dict:
                 },
             },
             {
-                # Play store greeting alone. GetParticipantInput Text must stay
-                # static — attribute-only Text broke DTMF "1" → Lex on WebRTC.
+                # WebRTC communications widget: GetParticipantInput DTMF "1"
+                # was not reaching Lex (ResolveStore ran, PhoneTurn never did).
+                # Skip 1/2 menu — greet then go straight into reservation Lex.
                 "Identifier": ids["menu_greet"],
                 "Type": "MessageParticipant",
                 "Parameters": {"Text": "$.Attributes.menuPrompt"},
                 "Transitions": {
-                    "NextAction": ids["menu"],
+                    "NextAction": ids["lex_reserve"],
                     "Errors": [
                         {
-                            "NextAction": ids["menu"],
+                            "NextAction": ids["lex_reserve"],
                             "ErrorType": "NoMatchingError",
                         }
-                    ],
-                },
-            },
-            {
-                "Identifier": ids["menu"],
-                "Type": "GetParticipantInput",
-                "Parameters": {
-                    "StoreInput": "False",
-                    "InputTimeLimitSeconds": "10",
-                    "Text": MENU_DTMF_TEXT,
-                },
-                "Transitions": {
-                    "NextAction": ids["menu_retry"],
-                    "Conditions": [
-                        {
-                            "NextAction": ids["lex_reserve"],
-                            "Condition": {
-                                "Operator": "Equals",
-                                "Operands": ["1"],
-                            },
-                        },
-                        {
-                            "NextAction": ids["lex_faq"],
-                            "Condition": {
-                                "Operator": "Equals",
-                                "Operands": ["2"],
-                            },
-                        },
-                    ],
-                    "Errors": [
-                        {
-                            "NextAction": ids["menu_retry"],
-                            "ErrorType": "InputTimeLimitExceeded",
-                        },
-                        {
-                            "NextAction": ids["menu_retry"],
-                            "ErrorType": "NoMatchingCondition",
-                        },
-                        {
-                            "NextAction": ids["menu_retry"],
-                            "ErrorType": "NoMatchingError",
-                        },
-                    ],
-                },
-            },
-            {
-                "Identifier": ids["menu_retry"],
-                "Type": "GetParticipantInput",
-                "Parameters": {
-                    "StoreInput": "False",
-                    "InputTimeLimitSeconds": "10",
-                    "Text": "もう一度お願いします。" + MENU_DTMF_TEXT,
-                },
-                "Transitions": {
-                    "NextAction": ids["handoff"],
-                    "Conditions": [
-                        {
-                            "NextAction": ids["lex_reserve"],
-                            "Condition": {
-                                "Operator": "Equals",
-                                "Operands": ["1"],
-                            },
-                        },
-                        {
-                            "NextAction": ids["lex_faq"],
-                            "Condition": {
-                                "Operator": "Equals",
-                                "Operands": ["2"],
-                            },
-                        },
-                    ],
-                    "Errors": [
-                        {
-                            "NextAction": ids["handoff"],
-                            "ErrorType": "InputTimeLimitExceeded",
-                        },
-                        {
-                            "NextAction": ids["handoff"],
-                            "ErrorType": "NoMatchingCondition",
-                        },
-                        {
-                            "NextAction": ids["handoff"],
-                            "ErrorType": "NoMatchingError",
-                        },
                     ],
                 },
             },
@@ -266,13 +177,14 @@ def content() -> dict:
                             "ErrorType": "NoMatchingCondition",
                         },
                         {
-                            "NextAction": ids["handoff"],
+                            "NextAction": ids["after_lex"],
                             "ErrorType": "NoMatchingError",
                         },
                     ],
                 },
             },
             {
+                # Kept for FAQ entry later; not linked from the WebRTC happy path.
                 "Identifier": ids["lex_faq"],
                 "Type": "ConnectParticipantWithLexBot",
                 "Parameters": {
@@ -308,7 +220,7 @@ def content() -> dict:
                             "ErrorType": "NoMatchingCondition",
                         },
                         {
-                            "NextAction": ids["handoff"],
+                            "NextAction": ids["after_lex"],
                             "ErrorType": "NoMatchingError",
                         },
                     ],

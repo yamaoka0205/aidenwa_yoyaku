@@ -37,51 +37,39 @@
           "y": 40
         }
       },
-      "11111111-1111-4111-8111-111111111105": {
-        "Position": {
-          "x": 160,
-          "y": 220
-        }
-      },
-      "11111111-1111-4111-8111-111111111106": {
-        "Position": {
-          "x": 400,
-          "y": 220
-        }
-      },
       "11111111-1111-4111-8111-111111111107": {
         "Position": {
-          "x": 640,
+          "x": 160,
           "y": 220
         }
       },
       "11111111-1111-4111-8111-111111111108": {
         "Position": {
-          "x": 880,
+          "x": 400,
           "y": 220
         }
       },
       "11111111-1111-4111-8111-111111111109": {
         "Position": {
-          "x": 1120,
+          "x": 640,
           "y": 220
         }
       },
       "11111111-1111-4111-8111-111111111110": {
         "Position": {
-          "x": 160,
-          "y": 400
+          "x": 880,
+          "y": 220
         }
       },
       "11111111-1111-4111-8111-111111111111": {
         "Position": {
-          "x": 400,
-          "y": 400
+          "x": 1120,
+          "y": 220
         }
       },
       "11111111-1111-4111-8111-111111111112": {
         "Position": {
-          "x": 640,
+          "x": 160,
           "y": 400
         }
       }
@@ -188,102 +176,10 @@
         "Text": "$.Attributes.menuPrompt"
       },
       "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111105",
+        "NextAction": "11111111-1111-4111-8111-111111111107",
         "Errors": [
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111105",
-            "ErrorType": "NoMatchingError"
-          }
-        ]
-      }
-    },
-    {
-      "Identifier": "11111111-1111-4111-8111-111111111105",
-      "Type": "GetParticipantInput",
-      "Parameters": {
-        "StoreInput": "False",
-        "InputTimeLimitSeconds": "10",
-        "Text": "ご予約の方は1を、それ以外のお問い合わせは2を押してください。"
-      },
-      "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111106",
-        "Conditions": [
           {
             "NextAction": "11111111-1111-4111-8111-111111111107",
-            "Condition": {
-              "Operator": "Equals",
-              "Operands": [
-                "1"
-              ]
-            }
-          },
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111108",
-            "Condition": {
-              "Operator": "Equals",
-              "Operands": [
-                "2"
-              ]
-            }
-          }
-        ],
-        "Errors": [
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111106",
-            "ErrorType": "InputTimeLimitExceeded"
-          },
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111106",
-            "ErrorType": "NoMatchingCondition"
-          },
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111106",
-            "ErrorType": "NoMatchingError"
-          }
-        ]
-      }
-    },
-    {
-      "Identifier": "11111111-1111-4111-8111-111111111106",
-      "Type": "GetParticipantInput",
-      "Parameters": {
-        "StoreInput": "False",
-        "InputTimeLimitSeconds": "10",
-        "Text": "もう一度お願いします。ご予約の方は1を、それ以外のお問い合わせは2を押してください。"
-      },
-      "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111110",
-        "Conditions": [
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111107",
-            "Condition": {
-              "Operator": "Equals",
-              "Operands": [
-                "1"
-              ]
-            }
-          },
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111108",
-            "Condition": {
-              "Operator": "Equals",
-              "Operands": [
-                "2"
-              ]
-            }
-          }
-        ],
-        "Errors": [
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111110",
-            "ErrorType": "InputTimeLimitExceeded"
-          },
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111110",
-            "ErrorType": "NoMatchingCondition"
-          },
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111110",
             "ErrorType": "NoMatchingError"
           }
         ]
@@ -333,7 +229,7 @@
             "ErrorType": "NoMatchingCondition"
           },
           {
-            "NextAction": "11111111-1111-4111-8111-111111111110",
+            "NextAction": "11111111-1111-4111-8111-111111111112",
             "ErrorType": "NoMatchingError"
           }
         ]
@@ -381,7 +277,7 @@
             "ErrorType": "NoMatchingCondition"
           },
           {
-            "NextAction": "11111111-1111-4111-8111-111111111110",
+            "NextAction": "11111111-1111-4111-8111-111111111112",
             "ErrorType": "NoMatchingError"
           }
         ]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,20 @@ def handler(event: dict[str, Any] | None = None, context: Any = None) -> dict[st
     session = (event.get("sessionState") or {}).get("sessionAttributes") or {}
     intent = ((event.get("sessionState") or {}).get("intent") or {}).get("name") or ""
     hint = session.get("intentHint") or ""
+    transcript = event.get("inputTranscript") or ""
+    print(
+        json.dumps(
+            {
+                "phoneTurn": True,
+                "intent": intent,
+                "hint": hint,
+                "transcript": transcript,
+                "step": session.get("step"),
+                "phase": session.get("phase"),
+            },
+            ensure_ascii=False,
+        )
+    )
     if hint in {"AskFaq", "BookReservation"}:
         intent = hint
     elif intent == "AskFaq":
