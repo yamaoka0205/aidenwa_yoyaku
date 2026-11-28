@@ -9,9 +9,9 @@ from handlers.resolve_store import _menu_prompt, handler  # noqa: E402
 
 def test_menu_prompt_includes_store_name():
     text = _menu_prompt("デモ食堂さくら")
-    assert "デモ食堂さくらです" in text
-    assert text.startswith("お電話ありがとうございます。")
-    assert "ご予約の方は1を" in text
+    assert text == "お電話ありがとうございます。デモ食堂さくらです。"
+    # DTMF choices stay in the Connect flow (static GetParticipantInput).
+    assert "ご予約" not in text
 
 
 def test_resolve_store_webrtc_returns_menu_prompt(monkeypatch):
@@ -40,4 +40,4 @@ def test_resolve_store_webrtc_returns_menu_prompt(monkeypatch):
     result = handler(event)
     assert result["found"] == "true"
     assert result["storeName"] == "デモ食堂さくら"
-    assert "デモ食堂さくらです" in result["menuPrompt"]
+    assert result["menuPrompt"] == "お電話ありがとうございます。デモ食堂さくらです。"

@@ -38,11 +38,14 @@ def _flag(value: bool) -> str:
 
 
 def _menu_prompt(store_name: str) -> str:
+    """Greeting only (store name baked in). DTMF choices are a separate static prompt.
+
+    Connect must not append Japanese after ``$.Attributes.storeName`` (it eats
+    「です」into the attribute key). Keep this string self-contained and play it
+    with MessageParticipant before GetParticipantInput.
+    """
     name = (store_name or "").strip() or "当店"
-    return (
-        f"お電話ありがとうございます。{name}です。"
-        "ご予約の方は1を、それ以外のお問い合わせは2を押してください。"
-    )
+    return f"お電話ありがとうございます。{name}です。"
 
 
 def handler(event: dict[str, Any] | None = None, context: Any = None) -> dict[str, str]:

@@ -22,6 +22,7 @@ ids = {
     "invoke": "11111111-1111-4111-8111-111111111102",
     "set_attrs": "11111111-1111-4111-8111-111111111103",
     "check_found": "11111111-1111-4111-8111-111111111104",
+    "menu_greet": "11111111-1111-4111-8111-111111111113",
     "menu": "11111111-1111-4111-8111-111111111105",
     "menu_retry": "11111111-1111-4111-8111-111111111106",
     "lex_reserve": "11111111-1111-4111-8111-111111111107",
@@ -31,6 +32,10 @@ ids = {
     "bye": "11111111-1111-4111-8111-111111111111",
     "after_lex": "11111111-1111-4111-8111-111111111112",
 }
+
+MENU_DTMF_TEXT = (
+    "ご予約の方は1を、それ以外のお問い合わせは2を押してください。"
+)
 
 
 def content() -> dict:
@@ -106,7 +111,7 @@ def content() -> dict:
                     "NextAction": ids["unknown"],
                     "Conditions": [
                         {
-                            "NextAction": ids["menu"],
+                            "NextAction": ids["menu_greet"],
                             "Condition": {
                                 "Operator": "Equals",
                                 "Operands": ["true"],
@@ -122,14 +127,28 @@ def content() -> dict:
                 },
             },
             {
+                # Play store greeting alone. GetParticipantInput Text must stay
+                # static — attribute-only Text broke DTMF "1" → Lex on WebRTC.
+                "Identifier": ids["menu_greet"],
+                "Type": "MessageParticipant",
+                "Parameters": {"Text": "$.Attributes.menuPrompt"},
+                "Transitions": {
+                    "NextAction": ids["menu"],
+                    "Errors": [
+                        {
+                            "NextAction": ids["menu"],
+                            "ErrorType": "NoMatchingError",
+                        }
+                    ],
+                },
+            },
+            {
                 "Identifier": ids["menu"],
                 "Type": "GetParticipantInput",
                 "Parameters": {
                     "StoreInput": "False",
-                    "InputTimeLimitSeconds": "8",
-                    # Whole prompt from ResolveStore — do not append Japanese
-                    # after $.Attributes.storeName (Connect eats 「です」into the key).
-                    "Text": "$.Attributes.menuPrompt",
+                    "InputTimeLimitSeconds": "10",
+                    "Text": MENU_DTMF_TEXT,
                 },
                 "Transitions": {
                     "NextAction": ids["menu_retry"],
@@ -159,7 +178,7 @@ def content() -> dict:
                             "ErrorType": "NoMatchingCondition",
                         },
                         {
-                            "NextAction": ids["handoff"],
+                            "NextAction": ids["menu_retry"],
                             "ErrorType": "NoMatchingError",
                         },
                     ],
@@ -170,11 +189,8 @@ def content() -> dict:
                 "Type": "GetParticipantInput",
                 "Parameters": {
                     "StoreInput": "False",
-                    "InputTimeLimitSeconds": "8",
-                    "Text": (
-                        "もう一度お願いします。ご予約の方は1を、"
-                        "それ以外のお問い合わせは2を押してください。"
-                    ),
+                    "InputTimeLimitSeconds": "10",
+                    "Text": "もう一度お願いします。" + MENU_DTMF_TEXT,
                 },
                 "Transitions": {
                     "NextAction": ids["handoff"],
@@ -224,14 +240,35 @@ def content() -> dict:
                         "intentHint": "BookReservation",
                     },
                 },
+                # Intent name is the result. Without Conditions, Connect treats
+                # BookReservation / FallbackIntent as NoMatchingCondition → handoff.
                 "Transitions": {
                     "NextAction": ids["after_lex"],
+                    "Conditions": [
+                        {
+                            "NextAction": ids["after_lex"],
+                            "Condition": {
+                                "Operator": "Equals",
+                                "Operands": ["BookReservation"],
+                            },
+                        },
+                        {
+                            "NextAction": ids["after_lex"],
+                            "Condition": {
+                                "Operator": "Equals",
+                                "Operands": ["FallbackIntent"],
+                            },
+                        },
+                    ],
                     "Errors": [
                         {
-                            "NextAction": ids["handoff"],
+                            "NextAction": ids["after_lex"],
                             "ErrorType": "NoMatchingCondition",
                         },
-                        {"NextAction": ids["handoff"], "ErrorType": "NoMatchingError"},
+                        {
+                            "NextAction": ids["handoff"],
+                            "ErrorType": "NoMatchingError",
+                        },
                     ],
                 },
             },
@@ -249,12 +286,31 @@ def content() -> dict:
                 },
                 "Transitions": {
                     "NextAction": ids["after_lex"],
+                    "Conditions": [
+                        {
+                            "NextAction": ids["after_lex"],
+                            "Condition": {
+                                "Operator": "Equals",
+                                "Operands": ["AskFaq"],
+                            },
+                        },
+                        {
+                            "NextAction": ids["after_lex"],
+                            "Condition": {
+                                "Operator": "Equals",
+                                "Operands": ["FallbackIntent"],
+                            },
+                        },
+                    ],
                     "Errors": [
                         {
-                            "NextAction": ids["handoff"],
+                            "NextAction": ids["after_lex"],
                             "ErrorType": "NoMatchingCondition",
                         },
-                        {"NextAction": ids["handoff"], "ErrorType": "NoMatchingError"},
+                        {
+                            "NextAction": ids["handoff"],
+                            "ErrorType": "NoMatchingError",
+                        },
                     ],
                 },
             },
