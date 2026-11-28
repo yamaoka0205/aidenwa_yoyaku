@@ -108,6 +108,64 @@ def test_dialog_asks_one_field_at_a_time(monkeypatch):
     assert "承りました" in r5["prompt"]
 
 
+def test_confirm_accepts_utterance_digit_without_dtmf(monkeypatch):
+    """Lex delivers keypad 1 as inputTranscript; must not re-loop confirm."""
+    store = MagicMock()
+
+    def fake_avail(*args, **kwargs):
+        return AvailabilityResult(
+            status="available",
+            tenantId="t_demo_001",
+            date=kwargs["date_s"],
+            startTime=kwargs["start_time_s"],
+            endTime="21:00",
+            partySize=kwargs["party_size"],
+            tableId="T4-01",
+            capacity=4,
+            candidateTableIds=["T4-01"],
+            standardDurationMin=120,
+        )
+
+    def fake_confirm(*args, **kwargs):
+        return ConfirmResult(
+            status="confirmed",
+            tenantId="t_demo_001",
+            reservationId="rid1",
+            date=kwargs["date_s"],
+            startTime=kwargs["start_time_s"],
+            endTime="21:00",
+            partySize=kwargs["party_size"],
+            tableId="T4-01",
+            capacity=4,
+            customerName=kwargs["customer_name"],
+            source="ai_phone",
+            standardDurationMin=120,
+        )
+
+    monkeypatch.setattr("booking.dialog.check_availability", fake_avail)
+    monkeypatch.setattr("booking.dialog.confirm_reservation", fake_confirm)
+
+    state = {
+        "step": "confirm",
+        "phase": "confirm",
+        "date": "2026-12-01",
+        "time": "19:00",
+        "partySize": "4",
+        "name": "ヤマダ",
+    }
+    r = handle_reservation_turn(
+        store, tenant_id="t_demo_001", utterance="1", state_data=state, dtmf=None
+    )
+    assert r["phase"] == "done"
+    assert r["resultStatus"] == "confirmed"
+
+    r2 = handle_reservation_turn(
+        store, tenant_id="t_demo_001", utterance="２", state_data=state, dtmf=None
+    )
+    assert r2["step"] == "party_size"
+    assert r2["phase"] == "collect"
+
+
 def test_party_size_dtmf_and_handoff():
     store = MagicMock()
     r0 = handle_reservation_turn(store, tenant_id="t_demo_001", utterance="")

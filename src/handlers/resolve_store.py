@@ -8,6 +8,9 @@ Output keys:
   found                  "true" / "false"
   callType               "phone" / "phone_anonymous" / "webrtc"
   tenantId, storeName, inboundId
+  menuPrompt             full greeting TTS (store name baked in). Connect must
+                         play $.Attributes.menuPrompt as a whole — mid-string
+                         $.Attributes.storeNameです eats 「です」into the key.
   callerNumber           real number for phone; "" for phone_anonymous;
                          demo placeholder for webrtc
   callerNumberAvailable  "true" only when callerNumber is real and may be saved
@@ -34,6 +37,17 @@ def _flag(value: bool) -> str:
     return "true" if value else "false"
 
 
+def _menu_prompt(store_name: str) -> str:
+    """Greeting only (store name baked in). DTMF choices are a separate static prompt.
+
+    Connect must not append Japanese after ``$.Attributes.storeName`` (it eats
+    「です」into the attribute key). Keep this string self-contained and play it
+    with MessageParticipant before GetParticipantInput.
+    """
+    name = (store_name or "").strip() or "当店"
+    return f"お電話ありがとうございます。{name}です。ご予約を承ります。"
+
+
 def handler(event: dict[str, Any] | None = None, context: Any = None) -> dict[str, str]:
     contact_data = ((event or {}).get("Details") or {}).get("ContactData") or {}
     endpoints = endpoints_from_contact(contact_data)
@@ -43,6 +57,7 @@ def handler(event: dict[str, Any] | None = None, context: Any = None) -> dict[st
         "callType": endpoints.call_type,
         "tenantId": "",
         "storeName": "",
+        "menuPrompt": "",
         "inboundId": endpoints.inbound_id,
         "callerNumber": endpoints.caller_number,
         "callerNumberAvailable": _flag(endpoints.caller_number_available),
@@ -62,11 +77,13 @@ def handler(event: dict[str, Any] | None = None, context: Any = None) -> dict[st
     if not profile or profile.get("status") != "active":
         return result
 
+    store_name = str(profile.get("name") or "")
     result.update(
         {
             "found": "true",
             "tenantId": profile["tenantId"],
-            "storeName": profile.get("name", ""),
+            "storeName": store_name,
+            "menuPrompt": _menu_prompt(store_name),
             "transferPhoneNumber": profile.get("transferPhoneNumber", ""),
         }
     )

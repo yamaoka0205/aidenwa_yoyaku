@@ -18,13 +18,48 @@ FLOW_NAME = "BookingApp-Inbound"
 INSTANCE_ID = os.environ.get(
     "CONNECT_INSTANCE_ID", "98c809c0-0dd7-414f-979a-bf7816f5bfae"
 )
-PLACEHOLDER_LAMBDA = (
+PLACEHOLDER_RESOLVE = (
     "arn:aws:lambda:${AWS_DEFAULT_REGION}:${AWS_ACCOUNT_ID}:function:BookingAppResolveStore"
+)
+PLACEHOLDER_TURN = (
+    "arn:aws:lambda:${AWS_DEFAULT_REGION}:${AWS_ACCOUNT_ID}"
+    ":function:BookingAppReservationTurn"
 )
 PLACEHOLDER_LEX = (
     "arn:aws:lex:${AWS_DEFAULT_REGION}:${AWS_ACCOUNT_ID}:bot-alias/"
     "${LEX_BOT_ID}/${LEX_ALIAS_ID}"
 )
+
+
+def _associate_lambda(connect, lam, *, instance_id: str, function_name: str) -> str:
+    fn_arn = lam.get_function(FunctionName=function_name)["Configuration"][
+        "FunctionArn"
+    ]
+    try:
+        connect.associate_lambda_function(InstanceId=instance_id, FunctionArn=fn_arn)
+        print(f"Associated {fn_arn}")
+    except ClientError as exc:
+        if exc.response["Error"]["Code"] != "ResourceConflictException":
+            raise
+        print(f"Lambda already associated: {function_name}")
+    return fn_arn
+
+
+def _permit_connect(lam, *, function_name: str, account: str, region: str) -> None:
+    instance_arn = f"arn:aws:connect:{region}:{account}:instance/{INSTANCE_ID}"
+    sid = f"AmazonConnect{function_name}"
+    try:
+        lam.add_permission(
+            FunctionName=function_name,
+            StatementId=sid,
+            Action="lambda:InvokeFunction",
+            Principal="connect.amazonaws.com",
+            SourceAccount=account,
+            SourceArn=instance_arn,
+        )
+    except ClientError as exc:
+        if exc.response["Error"]["Code"] != "ResourceConflictException":
+            raise
 
 
 def main() -> int:
@@ -33,7 +68,6 @@ def main() -> int:
         print("ERROR: set AWS_DEFAULT_REGION", file=sys.stderr)
         return 1
 
-    # Refresh template with current placeholders
     from build_connect_flow import main as build_template
 
     build_template()
@@ -43,9 +77,6 @@ def main() -> int:
     lam = session.client("lambda")
     connect = session.client("connect")
     account = sts.get_caller_identity()["Account"]
-    fn_arn = lam.get_function(FunctionName="BookingAppResolveStore")[
-        "Configuration"
-    ]["FunctionArn"]
 
     if not LEX_META.exists():
         print(
@@ -56,37 +87,43 @@ def main() -> int:
     lex = json.loads(LEX_META.read_text())
     lex_arn = lex["aliasArn"]
 
-    try:
-        connect.associate_lambda_function(InstanceId=INSTANCE_ID, FunctionArn=fn_arn)
-        print(f"Associated {fn_arn}")
-    except ClientError as exc:
-        if exc.response["Error"]["Code"] != "ResourceConflictException":
-            raise
-        print("Lambda already associated")
+    resolve_arn = _associate_lambda(
+        connect, lam, instance_id=INSTANCE_ID, function_name="BookingAppResolveStore"
+    )
+    turn_arn = _associate_lambda(
+        connect,
+        lam,
+        instance_id=INSTANCE_ID,
+        function_name="BookingAppReservationTurn",
+    )
 
-    # Associate Lex with Connect if needed
     try:
         connect.associate_bot(InstanceId=INSTANCE_ID, LexV2Bot={"AliasArn": lex_arn})
         print("Associated Lex bot")
     except ClientError as exc:
         print(f"associate_bot: {exc.response['Error']['Code']}")
 
-    instance_arn = f"arn:aws:connect:{region}:{account}:instance/{INSTANCE_ID}"
-    try:
-        lam.add_permission(
-            FunctionName="BookingAppResolveStore",
-            StatementId="AmazonConnectBookingAppResolveStore",
-            Action="lambda:InvokeFunction",
-            Principal="connect.amazonaws.com",
-            SourceAccount=account,
-            SourceArn=instance_arn,
-        )
-    except ClientError as exc:
-        if exc.response["Error"]["Code"] != "ResourceConflictException":
-            raise
+    _permit_connect(
+        lam, function_name="BookingAppResolveStore", account=account, region=region
+    )
+    _permit_connect(
+        lam,
+        function_name="BookingAppReservationTurn",
+        account=account,
+        region=region,
+    )
 
     raw = FLOW_PATH.read_text()
-    raw = raw.replace(PLACEHOLDER_LAMBDA, fn_arn).replace(PLACEHOLDER_LEX, lex_arn)
+    raw = (
+        raw.replace(PLACEHOLDER_RESOLVE, resolve_arn)
+        .replace(PLACEHOLDER_TURN, turn_arn)
+        .replace(PLACEHOLDER_LEX, lex_arn)
+    )
+    # Legacy single placeholder still present in older templates.
+    raw = raw.replace(
+        "arn:aws:lambda:${AWS_DEFAULT_REGION}:${AWS_ACCOUNT_ID}:function:BookingAppResolveStore",
+        resolve_arn,
+    )
     if "${" in raw:
         print("ERROR: unresolved placeholders remain", file=sys.stderr)
         return 1
@@ -108,7 +145,10 @@ def main() -> int:
             InstanceId=INSTANCE_ID,
             Name=FLOW_NAME,
             Type="CONTACT_FLOW",
-            Description="BookingApp inbound: resolve store, DTMF, Lex reserve/FAQ",
+            Description=(
+                "BookingApp inbound: ResolveStore → Lex ASR → Connect routing "
+                "(Helpdesk-style)"
+            ),
             Content=body,
         )
         flow_id = resp["ContactFlowId"]
@@ -119,6 +159,8 @@ def main() -> int:
     print(f"State={cf.get('State')} Status={cf.get('Status')}")
     print(f"Arn={cf['Arn']}")
     print(f"LexAlias={lex_arn}")
+    print(f"Resolve={resolve_arn}")
+    print(f"Turn={turn_arn}")
     return 0
 
 
