@@ -160,7 +160,11 @@ def main() -> int:
         print(f"Created locale {LOCALE}")
         time.sleep(5)
     except ClientError as exc:
-        if exc.response["Error"]["Code"] != "ConflictException":
+        # ConflictException or PreconditionFailedException when locale already exists
+        if exc.response["Error"]["Code"] not in {
+            "ConflictException",
+            "PreconditionFailedException",
+        }:
             raise
         print(f"Locale exists {LOCALE}")
 
@@ -180,10 +184,14 @@ def main() -> int:
         },
     }
 
-    def upsert_intent(name: str, samples: list[str], dialog: bool):
-        # Sample utterances are NOT used for dialog fields. Lex = ASR/TTS;
-        # Connect intentHint + Lambda/Bedrock own the conversation. Keep samples
-        # empty (or unused); short answers like「4」go through FallbackIntent.
+    def upsert_intent(
+        name: str,
+        samples: list[str],
+        dialog: bool,
+        slot_priorities: list[dict] | None = None,
+    ):
+        # Lex locale build requires ≥1 utterance + slot priorities. Field
+        # collection still goes through FallbackIntent → Lambda (ASR/TTS only).
         payload = {
             "botId": bot_id,
             "botVersion": "DRAFT",
@@ -194,6 +202,8 @@ def main() -> int:
         }
         if dialog:
             payload["dialogCodeHook"] = {"enabled": True}
+        if slot_priorities:
+            payload["slotPriorities"] = slot_priorities
         if name in by_name:
             lex.update_intent(intentId=by_name[name], **payload)
             print(f"Updated intent {name}")
@@ -202,10 +212,11 @@ def main() -> int:
         print(f"Created intent {name} {resp['intentId']}")
         return resp["intentId"]
 
-    book_id = upsert_intent("BookReservation", [], dialog=True)
-    faq_id = upsert_intent("AskFaq", [], dialog=True)
+    # Placeholder utterances only so locale build succeeds (not for dialog NLU).
+    book_id = upsert_intent("BookReservation", ["予約"], dialog=True)
+    faq_id = upsert_intent("AskFaq", ["質問"], dialog=True)
 
-    def ensure_freeform_slot(intent_id: str, slot_name: str) -> None:
+    def ensure_freeform_slot(intent_id: str, slot_name: str) -> str:
         """AMAZON.FreeFormInput keeps the next turn on DialogCodeHook (no NLU)."""
         existing = {
             s["slotName"]: s["slotId"]
@@ -214,7 +225,7 @@ def main() -> int:
             ).get("slotSummaries", [])
         }
         body = {
-            "slotTypeName": "AMAZON.FreeFormInput",
+            "slotTypeId": "AMAZON.FreeFormInput",
             "valueElicitationSetting": {
                 "slotConstraint": "Optional",
                 "promptSpecification": {
@@ -241,20 +252,38 @@ def main() -> int:
                 **body,
             )
             print(f"Updated slot {slot_name}")
-        else:
-            lex.create_slot(
-                slotName=slot_name,
-                botId=bot_id,
-                botVersion="DRAFT",
-                localeId=LOCALE,
-                intentId=intent_id,
-                **body,
-            )
-            print(f"Created slot {slot_name}")
+            return existing[slot_name]
+        resp = lex.create_slot(
+            slotName=slot_name,
+            botId=bot_id,
+            botVersion="DRAFT",
+            localeId=LOCALE,
+            intentId=intent_id,
+            **body,
+        )
+        print(f"Created slot {slot_name}")
+        return resp["slotId"]
 
-    ensure_freeform_slot(book_id, "UserReply")
-    ensure_freeform_slot(book_id, "Confirmation")
-    ensure_freeform_slot(faq_id, "UserReply")
+    book_user = ensure_freeform_slot(book_id, "UserReply")
+    book_confirm = ensure_freeform_slot(book_id, "Confirmation")
+    faq_user = ensure_freeform_slot(faq_id, "UserReply")
+
+    # Re-save intents with slot priorities (required after creating slots).
+    upsert_intent(
+        "BookReservation",
+        ["予約"],
+        dialog=True,
+        slot_priorities=[
+            {"priority": 1, "slotId": book_user},
+            {"priority": 2, "slotId": book_confirm},
+        ],
+    )
+    upsert_intent(
+        "AskFaq",
+        ["質問"],
+        dialog=True,
+        slot_priorities=[{"priority": 1, "slotId": faq_user}],
+    )
 
     # Short ASR results ("4", "明日") hit FallbackIntent. Hook it to the same Lambda
     # so Connect does not treat Fallback as end-of-call.
