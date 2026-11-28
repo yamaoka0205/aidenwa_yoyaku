@@ -21,6 +21,17 @@ from booking.db import BookingStore
 from booking.dialog import handle_reservation_turn, state_from_dict
 
 
+def _slot_interpreted(event: dict[str, Any], slot_name: str) -> str | None:
+    intent = ((event.get("sessionState") or {}).get("intent") or {})
+    slot = (intent.get("slots") or {}).get(slot_name) or {}
+    value = slot.get("value") or {}
+    raw = value.get("interpretedValue") or value.get("originalValue")
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    return text or None
+
+
 def _attrs(event: dict[str, Any]) -> dict[str, Any]:
     details = event.get("Details") or {}
     contact = details.get("ContactData") or {}
@@ -31,10 +42,13 @@ def _attrs(event: dict[str, Any]) -> dict[str, Any]:
         # Lex V2
         sess = event["sessionState"].get("sessionAttributes") or {}
         attrs.update(sess)
-        interpretations = event.get("interpretations") or []
-        if interpretations:
-            input_transcript = event.get("inputTranscript") or ""
+        input_transcript = event.get("inputTranscript") or ""
+        if input_transcript:
             attrs.setdefault("utterance", input_transcript)
+        # Keypad on Confirmation slot arrives as slot value, not session dtmf.
+        conf = _slot_interpreted(event, "Confirmation")
+        if conf and not attrs.get("dtmf"):
+            attrs["dtmf"] = conf
     if "body" in event and isinstance(event["body"], str):
         try:
             attrs.update(json.loads(event["body"] or "{}"))

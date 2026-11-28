@@ -81,6 +81,7 @@ def content() -> dict:
                         "callType": "$.External.callType",
                         "tenantId": "$.External.tenantId",
                         "storeName": "$.External.storeName",
+                        "menuPrompt": "$.External.menuPrompt",
                         "inboundId": "$.External.inboundId",
                         "callerNumber": "$.External.callerNumber",
                         "callerNumberAvailable": "$.External.callerNumberAvailable",
@@ -126,10 +127,9 @@ def content() -> dict:
                 "Parameters": {
                     "StoreInput": "False",
                     "InputTimeLimitSeconds": "8",
-                    "Text": (
-                        "お電話ありがとうございます。$.Attributes.storeNameです。"
-                        "ご予約の方は1を、それ以外のお問い合わせは2を押してください。"
-                    ),
+                    # Whole prompt from ResolveStore — do not append Japanese
+                    # after $.Attributes.storeName (Connect eats 「です」into the key).
+                    "Text": "$.Attributes.menuPrompt",
                 },
                 "Transitions": {
                     "NextAction": ids["menu_retry"],

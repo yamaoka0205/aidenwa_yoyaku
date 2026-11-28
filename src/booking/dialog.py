@@ -156,6 +156,20 @@ def _reset_for_correction(state: DialogState) -> None:
     state.last_prompt = "もう一度伺います。" + PROMPTS["party_size"]
 
 
+_DIGIT_TRANS = str.maketrans("１２", "12")
+
+
+def _confirm_choice(dtmf: str | None, utterance: str | None) -> str | None:
+    """Lex often delivers keypad 1/2 as inputTranscript, not a separate dtmf field."""
+    for raw in (dtmf, utterance):
+        if raw is None:
+            continue
+        token = str(raw).strip().translate(_DIGIT_TRANS)
+        if token in ("1", "2"):
+            return token
+    return None
+
+
 def state_from_dict(data: dict[str, Any]) -> DialogState:
     phase = str(data.get("phase") or "collect")
     date = data.get("date") or None
@@ -238,8 +252,9 @@ def handle_reservation_turn(
         out["action"] = "listen"
         return out
 
-    if state.step == "confirm" and dtmf:
-        if dtmf == "1":
+    if state.step == "confirm":
+        choice = _confirm_choice(dtmf, utterance)
+        if choice == "1":
             result = confirm_reservation(
                 store,
                 tenant_id=tenant_id,
@@ -273,12 +288,19 @@ def handle_reservation_turn(
             out["prompt"] = state.last_prompt
             out["action"] = "speak" if state.phase == "done" else "listen"
             return out
-        if dtmf == "2":
+        if choice == "2":
             _reset_for_correction(state)
             out = state_to_dict(state)
             out["prompt"] = state.last_prompt
             out["action"] = "listen"
             return out
+        # Unrecognized input on confirm → re-ask (do not re-run availability).
+        state.phase = "confirm"
+        state.last_prompt = _confirm_text(state)
+        out = state_to_dict(state)
+        out["prompt"] = state.last_prompt
+        out["action"] = "confirm_dtmf"
+        return out
 
     # Collect current field only
     if state.step in STEPS:
