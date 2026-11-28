@@ -170,15 +170,22 @@ def _confirm_choice(dtmf: str | None, utterance: str | None) -> str | None:
     return None
 
 
+def _blank_to_none(value: Any) -> Any:
+    if value is None:
+        return None
+    if isinstance(value, str) and not value.strip():
+        return None
+    return value
+
+
 def state_from_dict(data: dict[str, Any]) -> DialogState:
     phase = str(data.get("phase") or "collect")
-    date = data.get("date") or None
-    time = data.get("time") or data.get("startTime") or None
-    party_size = (
-        int(data["partySize"]) if data.get("partySize") not in (None, "") else None
-    )
-    name = data.get("name") or data.get("customerName") or None
-    step = str(data.get("step") or "")
+    date = _blank_to_none(data.get("date"))
+    time = _blank_to_none(data.get("time") or data.get("startTime"))
+    raw_party = _blank_to_none(data.get("partySize"))
+    party_size = int(raw_party) if raw_party is not None else None
+    name = _blank_to_none(data.get("name") or data.get("customerName"))
+    step = str(data.get("step") or "").strip()
     if not step:
         if phase == "confirm":
             step = "confirm"
@@ -225,6 +232,23 @@ def state_to_dict(state: DialogState) -> dict[str, Any]:
     }
 
 
+def _finish(out: dict[str, Any]) -> dict[str, Any]:
+    """Attach Connect-flow routing keys (Helpdesk-style routingAction)."""
+    action = out.get("action") or "listen"
+    if action == "confirm_dtmf":
+        routing = "CONFIRM"
+    elif action == "handoff":
+        routing = "HANDOFF"
+    elif action == "speak" or out.get("phase") == "done":
+        routing = "END"
+    else:
+        routing = "LISTEN"
+    out["routingAction"] = routing
+    # Connect MessageParticipant reads this (same name as AIHelpdesk flow).
+    out["aiResponseText"] = out.get("prompt") or ""
+    return out
+
+
 def handle_reservation_turn(
     store: BookingStore,
     *,
@@ -250,7 +274,7 @@ def handle_reservation_turn(
         out = state_to_dict(state)
         out["prompt"] = state.last_prompt
         out["action"] = "listen"
-        return out
+        return _finish(out)
 
     if state.step == "confirm":
         choice = _confirm_choice(dtmf, utterance)
@@ -287,20 +311,20 @@ def handle_reservation_turn(
             out = state_to_dict(state)
             out["prompt"] = state.last_prompt
             out["action"] = "speak" if state.phase == "done" else "listen"
-            return out
+            return _finish(out)
         if choice == "2":
             _reset_for_correction(state)
             out = state_to_dict(state)
             out["prompt"] = state.last_prompt
             out["action"] = "listen"
-            return out
+            return _finish(out)
         # Unrecognized input on confirm → re-ask (do not re-run availability).
         state.phase = "confirm"
         state.last_prompt = _confirm_text(state)
         out = state_to_dict(state)
         out["prompt"] = state.last_prompt
         out["action"] = "confirm_dtmf"
-        return out
+        return _finish(out)
 
     # Collect current field only
     if state.step in STEPS:
@@ -311,7 +335,7 @@ def handle_reservation_turn(
             out = state_to_dict(state)
             out["prompt"] = state.last_prompt
             out["action"] = "listen"
-            return out
+            return _finish(out)
 
     nxt = _next_step(state)
     if nxt == "handoff":
@@ -322,7 +346,7 @@ def handle_reservation_turn(
         out = state_to_dict(state)
         out["prompt"] = state.last_prompt
         out["action"] = "handoff"
-        return out
+        return _finish(out)
 
     if nxt in STEPS:
         state.step = nxt
@@ -331,7 +355,7 @@ def handle_reservation_turn(
         out = state_to_dict(state)
         out["prompt"] = state.last_prompt
         out["action"] = "listen"
-        return out
+        return _finish(out)
 
     # All fields present → availability then confirm
     avail = check_availability(
@@ -349,7 +373,7 @@ def handle_reservation_turn(
         out = state_to_dict(state)
         out["prompt"] = state.last_prompt
         out["action"] = "handoff"
-        return out
+        return _finish(out)
     if avail.status != "available":
         reasons = {
             "full": ("time", "その時間は満席です。" + PROMPTS["time"]),
@@ -371,7 +395,7 @@ def handle_reservation_turn(
         out = state_to_dict(state)
         out["prompt"] = state.last_prompt
         out["action"] = "listen"
-        return out
+        return _finish(out)
 
     state.step = "confirm"
     state.phase = "confirm"
@@ -379,4 +403,4 @@ def handle_reservation_turn(
     out = state_to_dict(state)
     out["prompt"] = state.last_prompt
     out["action"] = "confirm_dtmf"
-    return out
+    return _finish(out)

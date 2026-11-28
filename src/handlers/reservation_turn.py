@@ -71,42 +71,31 @@ def _attrs(event: dict[str, Any]) -> dict[str, Any]:
 
 
 def _lex_response(result: dict[str, Any], event: dict[str, Any]) -> dict[str, Any]:
-    """Keep Lex as ASR/TTS only: never ElicitIntent (that re-runs NLU).
+    """Helpdesk-style: Lex closes each turn; Connect plays prompt and branches.
 
-    Always continue on BookReservation + free-form slot so short answers like
-    「4」reach this Lambda instead of AMAZON.FallbackIntent ending the call.
+    Lex is ASR only for this turn. Lambda writes sessionAttributes
+    (prompt / routingAction / dialog state). Connect MessageParticipant reads
+    ``$.Lex.SessionAttributes.aiResponseText`` and Compare reads routingAction.
     """
     session = dict((event.get("sessionState") or {}).get("sessionAttributes") or {})
-    session.update({k: str(v) for k, v in result.items() if k != "prompt"})
+    session.update({k: ("" if v is None else str(v)) for k, v in result.items()})
     session["prompt"] = result.get("prompt") or ""
-    # Connect flow sets intentHint; keep it so FallbackIntent turns still route here.
+    session["aiResponseText"] = result.get("aiResponseText") or session["prompt"]
+    session["routingAction"] = result.get("routingAction") or "LISTEN"
     session.setdefault("intentHint", "BookReservation")
-    msg = result.get("prompt") or ""
-    intent_name = "BookReservation"
-    if result.get("phase") == "done":
-        dialog_action: dict[str, Any] = {"type": "Close"}
-        intent_state = "Fulfilled"
-    elif result.get("action") == "confirm_dtmf":
-        dialog_action = {"type": "ElicitSlot", "slotToElicit": "Confirmation"}
-        intent_state = "InProgress"
-    else:
-        # Free-form slot: next utterance invokes DialogCodeHook without intent match.
-        dialog_action = {"type": "ElicitSlot", "slotToElicit": "UserReply"}
-        intent_state = "InProgress"
+    intent_name = (
+        ((event.get("sessionState") or {}).get("intent") or {}).get("name")
+        or "FallbackIntent"
+    )
+    # Top-level keys too (some Connect mappings read them alongside sessionState).
     return {
+        **{k: session[k] for k in session},
         "sessionState": {
+            "dialogAction": {"type": "Close"},
+            "intent": {"name": intent_name, "state": "Fulfilled"},
             "sessionAttributes": session,
-            "dialogAction": dialog_action,
-            "intent": {
-                "name": intent_name,
-                "state": intent_state,
-                "slots": {
-                    "UserReply": None,
-                    "Confirmation": None,
-                },
-            },
         },
-        "messages": [{"contentType": "PlainText", "content": msg}],
+        "messages": [],
     }
 
 
@@ -131,11 +120,24 @@ def handler(event: dict[str, Any] | None = None, context: Any = None) -> dict[st
         "reservationId",
         "missing",
     )
-    state_data = {k: attrs.get(k) for k in state_keys if attrs.get(k) not in (None, "")}
+    def _kept(value: Any) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, str) and not value.strip():
+            return False
+        return True
+
+    state_data = {k: attrs.get(k) for k in state_keys if _kept(attrs.get(k))}
     if isinstance(state_data.get("missing"), str):
         state_data["missing"] = [
             x for x in str(state_data["missing"]).split(",") if x
         ]
+
+    # Connect GetParticipantInput(StoreInput=True) → $.StoredCustomerInput
+    contact = ((event.get("Details") or {}).get("ContactData") or {})
+    stored = contact.get("StoredCustomerInput") or attrs.get("StoredCustomerInput")
+    if not dtmf and stored not in (None, ""):
+        dtmf = str(stored).strip()
 
     caller_available = str(attrs.get("callerNumberAvailable") or "").lower() == "true"
     result = handle_reservation_turn(

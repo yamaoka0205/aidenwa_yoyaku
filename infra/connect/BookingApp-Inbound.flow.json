@@ -1,99 +1,188 @@
 {
   "Version": "2019-10-30",
-  "StartAction": "11111111-1111-4111-8111-111111111101",
+  "StartAction": "a1000001-0000-4000-8000-000000000001",
   "Metadata": {
     "EntryPointPosition": {
       "x": 40,
       "y": 40
     },
     "ActionMetadata": {
-      "11111111-1111-4111-8111-111111111101": {
-        "Position": {
-          "x": 160,
+      "a1000001-0000-4000-8000-000000000001": {
+        "position": {
+          "x": 80,
           "y": 40
         }
       },
-      "11111111-1111-4111-8111-111111111102": {
-        "Position": {
-          "x": 400,
+      "a1000001-0000-4000-8000-000000000002": {
+        "position": {
+          "x": 360,
           "y": 40
         }
       },
-      "11111111-1111-4111-8111-111111111103": {
-        "Position": {
+      "a1000001-0000-4000-8000-000000000003": {
+        "position": {
           "x": 640,
           "y": 40
         }
       },
-      "11111111-1111-4111-8111-111111111104": {
-        "Position": {
-          "x": 880,
+      "a1000001-0000-4000-8000-000000000004": {
+        "position": {
+          "x": 920,
           "y": 40
         }
       },
-      "11111111-1111-4111-8111-111111111113": {
-        "Position": {
-          "x": 1120,
+      "a1000001-0000-4000-8000-000000000005": {
+        "position": {
+          "x": 1200,
           "y": 40
         }
       },
-      "11111111-1111-4111-8111-111111111107": {
-        "Position": {
-          "x": 160,
-          "y": 220
+      "a1000001-0000-4000-8000-000000000006": {
+        "position": {
+          "x": 1200,
+          "y": 230
         }
       },
-      "11111111-1111-4111-8111-111111111108": {
-        "Position": {
-          "x": 400,
-          "y": 220
+      "a1000001-0000-4000-8000-000000000010": {
+        "position": {
+          "x": 80,
+          "y": 420
         }
       },
-      "11111111-1111-4111-8111-111111111109": {
-        "Position": {
+      "a1000001-0000-4000-8000-000000000011": {
+        "position": {
+          "x": 360,
+          "y": 420
+        }
+      },
+      "a1000001-0000-4000-8000-000000000020": {
+        "position": {
           "x": 640,
-          "y": 220
+          "y": 420
         }
       },
-      "11111111-1111-4111-8111-111111111110": {
-        "Position": {
-          "x": 880,
-          "y": 220
+      "a1000001-0000-4000-8000-000000000021": {
+        "position": {
+          "x": 920,
+          "y": 420
         }
       },
-      "11111111-1111-4111-8111-111111111111": {
-        "Position": {
-          "x": 1120,
-          "y": 220
+      "a1000001-0000-4000-8000-000000000022": {
+        "position": {
+          "x": 1200,
+          "y": 420
         }
       },
-      "11111111-1111-4111-8111-111111111112": {
-        "Position": {
-          "x": 160,
-          "y": 400
+      "a1000001-0000-4000-8000-000000000030": {
+        "position": {
+          "x": 640,
+          "y": 610
+        }
+      },
+      "a1000001-0000-4000-8000-000000000040": {
+        "position": {
+          "x": 80,
+          "y": 800
+        }
+      },
+      "a1000001-0000-4000-8000-000000000041": {
+        "position": {
+          "x": 360,
+          "y": 800
+        }
+      },
+      "a1000001-0000-4000-8000-000000000045": {
+        "position": {
+          "x": 640,
+          "y": 800
+        }
+      },
+      "a1000001-0000-4000-8000-000000000046": {
+        "position": {
+          "x": 640,
+          "y": 990
+        }
+      },
+      "a1000001-0000-4000-8000-000000000042": {
+        "position": {
+          "x": 920,
+          "y": 800
+        }
+      },
+      "a1000001-0000-4000-8000-000000000043": {
+        "position": {
+          "x": 1200,
+          "y": 800
+        }
+      },
+      "a1000001-0000-4000-8000-000000000044": {
+        "position": {
+          "x": 1480,
+          "y": 800
+        }
+      },
+      "a1000001-0000-4000-8000-000000000050": {
+        "position": {
+          "x": 80,
+          "y": 990
+        }
+      },
+      "a1000001-0000-4000-8000-000000000051": {
+        "position": {
+          "x": 360,
+          "y": 990
+        }
+      },
+      "a1000001-0000-4000-8000-000000000060": {
+        "position": {
+          "x": 80,
+          "y": 1180
+        }
+      },
+      "a1000001-0000-4000-8000-000000000061": {
+        "position": {
+          "x": 360,
+          "y": 1180
+        }
+      },
+      "a1000001-0000-4000-8000-000000000070": {
+        "position": {
+          "x": 920,
+          "y": 990
         }
       }
     }
   },
   "Actions": [
     {
-      "Identifier": "11111111-1111-4111-8111-111111111101",
+      "Identifier": "a1000001-0000-4000-8000-000000000001",
+      "Type": "UpdateFlowLoggingBehavior",
+      "Parameters": {
+        "FlowLoggingBehavior": "Enabled"
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000002",
+        "Errors": []
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000002",
       "Type": "UpdateContactTextToSpeechVoice",
       "Parameters": {
         "TextToSpeechVoice": "Mizuki"
       },
       "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111102",
+        "NextAction": "a1000001-0000-4000-8000-000000000003",
         "Errors": [
           {
-            "NextAction": "11111111-1111-4111-8111-111111111102",
+            "NextAction": "a1000001-0000-4000-8000-000000000003",
             "ErrorType": "NoMatchingError"
           }
         ]
       }
     },
     {
-      "Identifier": "11111111-1111-4111-8111-111111111102",
+      "Identifier": "a1000001-0000-4000-8000-000000000003",
       "Type": "InvokeLambdaFunction",
       "Parameters": {
         "LambdaFunctionARN": "arn:aws:lambda:${AWS_DEFAULT_REGION}:${AWS_ACCOUNT_ID}:function:BookingAppResolveStore",
@@ -104,17 +193,17 @@
         }
       },
       "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111103",
+        "NextAction": "a1000001-0000-4000-8000-000000000004",
         "Errors": [
           {
-            "NextAction": "11111111-1111-4111-8111-111111111109",
+            "NextAction": "a1000001-0000-4000-8000-000000000006",
             "ErrorType": "NoMatchingError"
           }
         ]
       }
     },
     {
-      "Identifier": "11111111-1111-4111-8111-111111111103",
+      "Identifier": "a1000001-0000-4000-8000-000000000004",
       "Type": "UpdateContactAttributes",
       "Parameters": {
         "Attributes": {
@@ -128,31 +217,44 @@
           "callerNumberAvailable": "$.External.callerNumberAvailable",
           "inboundIsDemo": "$.External.inboundIsDemo",
           "callerNumberIsDemo": "$.External.callerNumberIsDemo",
-          "transferPhoneNumber": "$.External.transferPhoneNumber"
+          "transferPhoneNumber": "$.External.transferPhoneNumber",
+          "step": "party_size",
+          "phase": "collect",
+          "date": " ",
+          "time": " ",
+          "partySize": " ",
+          "name": " ",
+          "lastPrompt": " ",
+          "resultStatus": " ",
+          "reservationId": " ",
+          "prompt": "人数は何人ですか。1から6の数字でお答えください。ボタンでも入力できます。",
+          "aiResponseText": "人数は何人ですか。1から6の数字でお答えください。ボタンでも入力できます。",
+          "routingAction": "LISTEN",
+          "action": "listen"
         },
         "TargetContact": "Current"
       },
       "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111104",
+        "NextAction": "a1000001-0000-4000-8000-000000000005",
         "Errors": [
           {
-            "NextAction": "11111111-1111-4111-8111-111111111109",
+            "NextAction": "a1000001-0000-4000-8000-000000000006",
             "ErrorType": "NoMatchingError"
           }
         ]
       }
     },
     {
-      "Identifier": "11111111-1111-4111-8111-111111111104",
+      "Identifier": "a1000001-0000-4000-8000-000000000005",
       "Type": "Compare",
       "Parameters": {
         "ComparisonValue": "$.Attributes.found"
       },
       "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111109",
+        "NextAction": "a1000001-0000-4000-8000-000000000006",
         "Conditions": [
           {
-            "NextAction": "11111111-1111-4111-8111-111111111113",
+            "NextAction": "a1000001-0000-4000-8000-000000000010",
             "Condition": {
               "Operator": "Equals",
               "Operands": [
@@ -163,33 +265,60 @@
         ],
         "Errors": [
           {
-            "NextAction": "11111111-1111-4111-8111-111111111109",
+            "NextAction": "a1000001-0000-4000-8000-000000000006",
             "ErrorType": "NoMatchingCondition"
           }
         ]
       }
     },
     {
-      "Identifier": "11111111-1111-4111-8111-111111111113",
+      "Identifier": "a1000001-0000-4000-8000-000000000006",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "申し訳ありません。店舗を特定できませんでした。電話番号をご確認のうえ、再度おかけ直しください。"
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000070",
+        "Errors": []
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000010",
       "Type": "MessageParticipant",
       "Parameters": {
         "Text": "$.Attributes.menuPrompt"
       },
       "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111107",
+        "NextAction": "a1000001-0000-4000-8000-000000000011",
         "Errors": [
           {
-            "NextAction": "11111111-1111-4111-8111-111111111107",
+            "NextAction": "a1000001-0000-4000-8000-000000000011",
             "ErrorType": "NoMatchingError"
           }
         ]
       }
     },
     {
-      "Identifier": "11111111-1111-4111-8111-111111111107",
+      "Identifier": "a1000001-0000-4000-8000-000000000011",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "人数は何人ですか。1から6の数字でお答えください。ボタンでも入力できます。"
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000020",
+        "Errors": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000020",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000020",
       "Type": "ConnectParticipantWithLexBot",
       "Parameters": {
-        "Text": "人数は何人ですか。1から6の数字でお答えください。ボタンでも入力できます。",
+        "Text": " ",
         "LexV2Bot": {
           "AliasArn": "arn:aws:lex:${AWS_DEFAULT_REGION}:${AWS_ACCOUNT_ID}:bot-alias/${LEX_BOT_ID}/${LEX_ALIAS_ID}"
         },
@@ -198,126 +327,399 @@
           "callerNumber": "$.Attributes.callerNumber",
           "callerNumberAvailable": "$.Attributes.callerNumberAvailable",
           "storeName": "$.Attributes.storeName",
-          "intentHint": "BookReservation"
+          "intentHint": "BookReservation",
+          "step": "$.Attributes.step",
+          "phase": "$.Attributes.phase",
+          "date": "$.Attributes.date",
+          "time": "$.Attributes.time",
+          "partySize": "$.Attributes.partySize",
+          "name": "$.Attributes.name",
+          "lastPrompt": "$.Attributes.lastPrompt",
+          "resultStatus": "$.Attributes.resultStatus",
+          "reservationId": "$.Attributes.reservationId",
+          "prompt": "$.Attributes.prompt",
+          "aiResponseText": "$.Attributes.aiResponseText",
+          "routingAction": "$.Attributes.routingAction",
+          "action": "$.Attributes.action"
         }
       },
       "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111112",
-        "Conditions": [
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111112",
-            "Condition": {
-              "Operator": "Equals",
-              "Operands": [
-                "BookReservation"
-              ]
-            }
-          },
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111112",
-            "Condition": {
-              "Operator": "Equals",
-              "Operands": [
-                "FallbackIntent"
-              ]
-            }
-          }
-        ],
+        "NextAction": "a1000001-0000-4000-8000-000000000021",
         "Errors": [
           {
-            "NextAction": "11111111-1111-4111-8111-111111111112",
+            "NextAction": "a1000001-0000-4000-8000-000000000021",
             "ErrorType": "NoMatchingCondition"
           },
           {
-            "NextAction": "11111111-1111-4111-8111-111111111112",
+            "NextAction": "a1000001-0000-4000-8000-000000000021",
             "ErrorType": "NoMatchingError"
           }
         ]
       }
     },
     {
-      "Identifier": "11111111-1111-4111-8111-111111111108",
-      "Type": "ConnectParticipantWithLexBot",
+      "Identifier": "a1000001-0000-4000-8000-000000000021",
+      "Type": "UpdateContactAttributes",
       "Parameters": {
-        "Text": "ご用件をお話しください。",
-        "LexV2Bot": {
-          "AliasArn": "arn:aws:lex:${AWS_DEFAULT_REGION}:${AWS_ACCOUNT_ID}:bot-alias/${LEX_BOT_ID}/${LEX_ALIAS_ID}"
+        "Attributes": {
+          "step": "$.Lex.SessionAttributes.step",
+          "phase": "$.Lex.SessionAttributes.phase",
+          "date": "$.Lex.SessionAttributes.date",
+          "time": "$.Lex.SessionAttributes.time",
+          "partySize": "$.Lex.SessionAttributes.partySize",
+          "name": "$.Lex.SessionAttributes.name",
+          "lastPrompt": "$.Lex.SessionAttributes.lastPrompt",
+          "resultStatus": "$.Lex.SessionAttributes.resultStatus",
+          "reservationId": "$.Lex.SessionAttributes.reservationId",
+          "prompt": "$.Lex.SessionAttributes.prompt",
+          "aiResponseText": "$.Lex.SessionAttributes.aiResponseText",
+          "routingAction": "$.Lex.SessionAttributes.routingAction",
+          "action": "$.Lex.SessionAttributes.action"
         },
-        "LexSessionAttributes": {
-          "tenantId": "$.Attributes.tenantId",
-          "storeName": "$.Attributes.storeName",
-          "intentHint": "AskFaq"
-        }
+        "TargetContact": "Current"
       },
       "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111112",
-        "Conditions": [
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111112",
-            "Condition": {
-              "Operator": "Equals",
-              "Operands": [
-                "AskFaq"
-              ]
-            }
-          },
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111112",
-            "Condition": {
-              "Operator": "Equals",
-              "Operands": [
-                "FallbackIntent"
-              ]
-            }
-          }
-        ],
+        "NextAction": "a1000001-0000-4000-8000-000000000022",
         "Errors": [
           {
-            "NextAction": "11111111-1111-4111-8111-111111111112",
-            "ErrorType": "NoMatchingCondition"
-          },
-          {
-            "NextAction": "11111111-1111-4111-8111-111111111112",
+            "NextAction": "a1000001-0000-4000-8000-000000000022",
             "ErrorType": "NoMatchingError"
           }
         ]
       }
     },
     {
-      "Identifier": "11111111-1111-4111-8111-111111111112",
+      "Identifier": "a1000001-0000-4000-8000-000000000022",
+      "Type": "Compare",
+      "Parameters": {
+        "ComparisonValue": "$.Attributes.routingAction"
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000030",
+        "Conditions": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000040",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "CONFIRM"
+              ]
+            }
+          },
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000050",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "END"
+              ]
+            }
+          },
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000060",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "HANDOFF"
+              ]
+            }
+          },
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000030",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "LISTEN"
+              ]
+            }
+          }
+        ],
+        "Errors": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000030",
+            "ErrorType": "NoMatchingCondition"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000030",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "$.Attributes.aiResponseText"
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000020",
+        "Errors": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000020",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000040",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "$.Attributes.aiResponseText"
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000041",
+        "Errors": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000041",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000041",
+      "Type": "GetParticipantInput",
+      "Parameters": {
+        "StoreInput": "False",
+        "InputTimeLimitSeconds": "10",
+        "Text": "よろしければ1を、訂正する場合は2を押してください。"
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000040",
+        "Conditions": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000045",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "1"
+              ]
+            }
+          },
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000046",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "2"
+              ]
+            }
+          }
+        ],
+        "Errors": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000040",
+            "ErrorType": "InputTimeLimitExceeded"
+          },
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000040",
+            "ErrorType": "NoMatchingCondition"
+          },
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000061",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000045",
+      "Type": "UpdateContactAttributes",
+      "Parameters": {
+        "Attributes": {
+          "dtmf": "1"
+        },
+        "TargetContact": "Current"
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000042",
+        "Errors": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000042",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000046",
+      "Type": "UpdateContactAttributes",
+      "Parameters": {
+        "Attributes": {
+          "dtmf": "2"
+        },
+        "TargetContact": "Current"
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000042",
+        "Errors": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000042",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000042",
+      "Type": "InvokeLambdaFunction",
+      "Parameters": {
+        "LambdaFunctionARN": "arn:aws:lambda:${AWS_DEFAULT_REGION}:${AWS_ACCOUNT_ID}:function:BookingAppReservationTurn",
+        "InvocationTimeLimitSeconds": "8",
+        "InvocationType": "SYNCHRONOUS",
+        "ResponseValidation": {
+          "ResponseType": "STRING_MAP"
+        }
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000043",
+        "Errors": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000061",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000043",
+      "Type": "UpdateContactAttributes",
+      "Parameters": {
+        "Attributes": {
+          "step": "$.External.step",
+          "phase": "$.External.phase",
+          "date": "$.External.date",
+          "time": "$.External.time",
+          "partySize": "$.External.partySize",
+          "name": "$.External.name",
+          "lastPrompt": "$.External.lastPrompt",
+          "resultStatus": "$.External.resultStatus",
+          "reservationId": "$.External.reservationId",
+          "prompt": "$.External.prompt",
+          "aiResponseText": "$.External.aiResponseText",
+          "routingAction": "$.External.routingAction",
+          "action": "$.External.action"
+        },
+        "TargetContact": "Current"
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000044",
+        "Errors": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000044",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000044",
+      "Type": "Compare",
+      "Parameters": {
+        "ComparisonValue": "$.Attributes.routingAction"
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000030",
+        "Conditions": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000040",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "CONFIRM"
+              ]
+            }
+          },
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000050",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "END"
+              ]
+            }
+          },
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000060",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "HANDOFF"
+              ]
+            }
+          },
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000030",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "LISTEN"
+              ]
+            }
+          }
+        ],
+        "Errors": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000030",
+            "ErrorType": "NoMatchingCondition"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000050",
+      "Type": "MessageParticipant",
+      "Parameters": {
+        "Text": "$.Attributes.aiResponseText"
+      },
+      "Transitions": {
+        "NextAction": "a1000001-0000-4000-8000-000000000051",
+        "Errors": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000051",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Identifier": "a1000001-0000-4000-8000-000000000051",
       "Type": "MessageParticipant",
       "Parameters": {
         "Text": "お電話ありがとうございました。"
       },
       "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111111",
+        "NextAction": "a1000001-0000-4000-8000-000000000070",
         "Errors": []
       }
     },
     {
-      "Identifier": "11111111-1111-4111-8111-111111111109",
+      "Identifier": "a1000001-0000-4000-8000-000000000060",
       "Type": "MessageParticipant",
       "Parameters": {
-        "Text": "申し訳ありません。店舗を特定できませんでした。電話番号をご確認のうえ、再度おかけ直しください。"
+        "Text": "$.Attributes.aiResponseText"
       },
       "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111111",
-        "Errors": []
+        "NextAction": "a1000001-0000-4000-8000-000000000061",
+        "Errors": [
+          {
+            "NextAction": "a1000001-0000-4000-8000-000000000061",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
       }
     },
     {
-      "Identifier": "11111111-1111-4111-8111-111111111110",
+      "Identifier": "a1000001-0000-4000-8000-000000000061",
       "Type": "MessageParticipant",
       "Parameters": {
         "Text": "申し訳ありません。担当者への引き継ぎはこれから接続します。いったん通話を終了します。"
       },
       "Transitions": {
-        "NextAction": "11111111-1111-4111-8111-111111111111",
+        "NextAction": "a1000001-0000-4000-8000-000000000070",
         "Errors": []
       }
     },
     {
-      "Identifier": "11111111-1111-4111-8111-111111111111",
+      "Identifier": "a1000001-0000-4000-8000-000000000070",
       "Type": "DisconnectParticipant",
       "Parameters": {},
       "Transitions": {}
